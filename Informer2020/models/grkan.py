@@ -21,25 +21,26 @@ class Rational(nn.Module):
                 self.b[:, 0] = 1.0
 
     def forward(self, x):
-        B, L, D = x.shape
-        G = self.groups
-        # shape (B,L,G,D/G)
-        xg = x.view(B, L, G, D // G)
-        flat = xg.reshape(-1, D // G)  # (B*L*G, D/G)
+    B, L, D = x.shape
+    G = self.groups
+    assert D % G == 0, "D must be divisible by groups"
+    xg = x.view(B, L, G, D // G)  # (B, L, G, D//G)
 
-        # Horner's method for numerator
-        Px = torch.zeros_like(flat)
-        for i in range(self.m, -1, -1):
-            Px = Px * flat + self.a[:, i].unsqueeze(1)
+    # Horner's method for numerator
+    Px = torch.zeros_like(xg)
+    for i in range(self.m, -1, -1):
+        # self.a[:, i]: (G,)
+        ai = self.a[:, i].view(1, 1, G, 1)  # (1, 1, G, 1)
+        Px = Px * xg + ai
 
-        # Horner's method for denominator
-        Qx = torch.zeros_like(flat)
-        for j in range(self.n, -1, -1):
-            Qx = Qx * flat + self.b[:, j].unsqueeze(1)
+    # Horner's method for denominator
+    Qx = torch.zeros_like(xg)
+    for j in range(self.n, -1, -1):
+        bj = self.b[:, j].view(1, 1, G, 1)
+        Qx = Qx * xg + bj
 
-        Px = Px.view(B, L, D)
-        Qx = Qx.view(B, L, D)
-        return Px / Qx
+    out = Px / Qx
+    return out.view(B, L, D)
 
 class GRKANLinear(nn.Module):
     def __init__(self, in_dim, out_dim, groups, m=5, n=4,
