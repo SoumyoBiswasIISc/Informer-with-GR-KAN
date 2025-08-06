@@ -29,7 +29,6 @@ class Rational(nn.Module):
         # Horner's method for numerator
         Px = torch.zeros_like(xg)
         for i in range(self.m, -1, -1):
-            # self.a[:, i]: (G,)
             ai = self.a[:, i].view(1, 1, G, 1)  # (1, 1, G, 1)
             Px = Px * xg + ai
 
@@ -39,7 +38,10 @@ class Rational(nn.Module):
             bj = self.b[:, j].view(1, 1, G, 1)
             Qx = Qx * xg + bj
 
-        out = Px / Qx
+        # Your intended denominator: 1 + |Q(x)|
+        denom = 1 + Qx.abs()
+
+        out = Px / denom
         return out.view(B, L, D)
 
 class GRKANLinear(nn.Module):
