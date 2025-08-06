@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import torch
 import argparse
-from exp.exp_informer import Exp_Informer
+from Informer2020.exp.exp_informer import Exp_Informer
 
 def get_args():
     p = argparse.ArgumentParser()
