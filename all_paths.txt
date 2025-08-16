@@ -1,0 +1,3 @@
+machine rda.ucar.edu
+    login soumyobiswaslko@gmail.com
+    password your_RDA_password
