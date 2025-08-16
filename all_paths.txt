@@ -1,3 +1,0 @@
-machine rda.ucar.edu
-    login soumyobiswaslko@gmail.com
-    password BkV5v6C/q_Rs6k?
