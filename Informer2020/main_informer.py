@@ -173,6 +173,8 @@ parser.add_argument('--use_gpu', type=bool, default=True, help='use gpu')
 parser.add_argument('--gpu', type=int, default=0, help='gpu id')
 parser.add_argument('--use_multi_gpu', action='store_true', default=False, help='use multiple gpus')
 parser.add_argument('--devices', type=str, default='0,1,2,3', help='device ids of multiple gpus')
+parser.add_argument('--pretrain_path', type=str, default=None,
+                    help='path to pretrained Informer checkpoint')
 
 args = parser.parse_args()
 
