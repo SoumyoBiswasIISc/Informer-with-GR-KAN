@@ -719,6 +719,8 @@ class Dataset_Custom(Dataset):
         seq_x = self.data_x[s_begin:s_end]
         seq_y = self.data_y[s_end - 1]
 
+        print(f"DEBUG: index={index}, seq_x.shape={seq_x.shape}, seq_y={seq_y}")
+
         district_year_str = self.df_raw.iloc[s_begin]["District"]
         year = int(district_year_str.split()[-1])
         if year % 4 == 0:
