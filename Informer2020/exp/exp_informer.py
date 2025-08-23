@@ -582,9 +582,9 @@ class Exp_Informer(Exp_Basic):
 
         # === Agriculture-specific: no teacher forcing, avoid leakage ===
         if self.args.padding == 0:
-            dec_inp = torch.zeros(
-                [batch_y.shape[0], self.args.label_len + self.args.pred_len, batch_y.shape[-1]]
-            ).float().to(self.device)
+            dec_inp = torch.zeros([batch_x.shape[0],
+                       self.args.label_len + self.args.pred_len,
+                       self.args.dec_in]).float().to(self.device)
         elif self.args.padding == 1:
             dec_inp = torch.ones(
                 [batch_y.shape[0], self.args.label_len + self.args.pred_len, batch_y.shape[-1]]
