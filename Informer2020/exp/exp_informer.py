@@ -311,49 +311,7 @@ class Exp_Informer(Exp_Basic):
     def __init__(self, args):
         super(Exp_Informer, self).__init__(args)
 
-    def _build_model(self):
-        model_dict = {
-            "informer": Informer,
-            "informerstack": InformerStack,
-        }
 
-        model_name_lower = self.args.model.lower()
-        if model_name_lower == "informer":
-            e_layers = self.args.e_layers
-        elif model_name_lower == "informerstack":
-            e_layers = self.args.s_layers
-        else:
-            raise ValueError(
-                f"Model name '{self.args.model}' is not recognized. Choose 'Informer' or 'InformerStack'."
-            )
-
-        model = model_dict[model_name_lower](
-            self.args.enc_in,
-            self.args.dec_in,
-            self.args.c_out,
-            self.args.seq_len,
-            self.args.label_len,
-            self.args.pred_len,
-            self.args.factor,
-            self.args.d_model,
-            self.args.n_heads,
-            e_layers,
-            self.args.d_layers,
-            self.args.d_ff,
-            self.args.dropout,
-            self.args.attn,
-            self.args.embed,
-            self.args.freq,
-            self.args.activation,
-            self.args.output_attention,
-            self.args.distil,
-            self.args.mix,
-            self.device,
-        ).float()
-
-        if self.args.use_multi_gpu and self.args.use_gpu:
-            model = nn.DataParallel(model, device_ids=self.args.device_ids)
-        return model
 
     def _get_data(self, flag, train_scaler=None):
         args = self.args
