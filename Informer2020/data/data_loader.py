@@ -652,65 +652,7 @@ class Dataset_Custom(Dataset):
         self.scaler = StandardScaler()
         self.train_scaler = train_scaler
 
-    def __read_data__(self):
-        import os
-        import pandas as pd
-        from utils.tools import StandardScaler
 
-        # 1. Load the data
-        df_raw = pd.read_csv(os.path.join(self.root_path, self.data_path))
-
-        # 2. Extract year from the 'District' column
-        df_raw['Year'] = df_raw['District'].str.split().str[-1].astype(int)
-
-        # 3. Filter DataFrame based on year and flag
-        if self.flag == 'train':
-            df_raw = df_raw[(df_raw['Year'] >= 2001) & (df_raw['Year'] <= 2005)]
-        elif self.flag == 'val':
-            df_raw = df_raw[df_raw['Year'] == 2007]
-        elif self.flag == 'test':
-            df_raw = df_raw[df_raw['Year'] == 2006]
-
-        # 4. Store the filtered DataFrame
-        self.df_raw = df_raw.reset_index(drop=True)
-
-        # 5. Select columns to use (8 features + target)
-        if self.cols is not None:
-            cols_to_use = self.cols + [self.target]
-        else:
-            cols_to_use = [
-                'NDVI', 'EVI', 'NIR-V', 'CSIF',
-                'Rainfall', 'Tmax', 'Tmin', 'Solr_mean',
-                self.target
-            ]
-        df_raw = df_raw[cols_to_use]
-
-        # 6. Prepare features (X) and target (y)
-        feature_cols = df_raw.columns[:-1]
-        df_data = df_raw[feature_cols]
-        target_data = df_raw[self.target]
-
-        # Ensure numeric
-        df_data = df_data.apply(pd.to_numeric, errors='coerce').fillna(0)
-
-        # 7. Scaling
-        self.scaler = StandardScaler()
-        if self.scale:
-            if self.flag == 'train':
-                self.scaler.fit(df_data.values)
-                self.train_scaler = self.scaler
-                data_x = self.scaler.transform(df_data.values)
-            else:
-                if self.train_scaler is not None:
-                    data_x = self.train_scaler.transform(df_data.values)
-                else:
-                    raise Exception("Scaler not fitted on training data.")
-        else:
-            data_x = df_data.values
-
-        # 8. Store
-        self.data_x = data_x
-        self.data_y = target_data.values
 
     def __getitem__(self, index):
         s_begin = index
