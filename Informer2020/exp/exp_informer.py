@@ -365,14 +365,14 @@ class Exp_Informer(Exp_Basic):
         if self.args.use_multi_gpu and self.args.use_gpu:
             model = nn.DataParallel(model, device_ids=self.args.device_ids)
         if hasattr(self.args, "pretrain_path") and self.args.pretrain_path is not None:
-    if os.path.exists(self.args.pretrain_path):
-        print(f"Loading pretrained weights from {self.args.pretrain_path}")
-        state_dict = torch.load(self.args.pretrain_path, map_location=self.device)
-        missing, unexpected = model.load_state_dict(state_dict, strict=False)
-        print("=> Missing keys (not loaded):", missing)
-        print("=> Unexpected keys (ignored):", unexpected)
-    else:
-        print(f"WARNING: Pretrain path {self.args.pretrain_path} not found. Starting from scratch.")
+            if os.path.exists(self.args.pretrain_path):
+                print(f"Loading pretrained weights from {self.args.pretrain_path}")
+                state_dict = torch.load(self.args.pretrain_path, map_location=self.device)
+                missing, unexpected = model.load_state_dict(state_dict, strict=False)
+                print("=> Missing keys (not loaded):", missing)
+                print("=> Unexpected keys (ignored):", unexpected)
+            else:
+                print(f"WARNING: Pretrain path {self.args.pretrain_path} not found. Starting from scratch.")
 
         return model
 
