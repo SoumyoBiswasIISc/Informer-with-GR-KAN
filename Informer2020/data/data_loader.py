@@ -383,42 +383,27 @@ import pandas as pd
 
 import torch
 from torch.utils.data import Dataset, DataLoader
-# from sklearn.preprocessing import StandardScaler
 
 from utils.tools import StandardScaler
 from utils.timefeatures import time_features
 
 import warnings
-
-warnings.filterwarnings("ignore")
+warnings.filterwarnings('ignore')
 
 
 class Dataset_ETT_hour(Dataset):
-    def __init__(
-        self,
-        root_path,
-        flag="train",
-        size=None,
-        features="S",
-        data_path="ETTh1.csv",
-        target="OT",
-        scale=True,
-        inverse=False,
-        timeenc=0,
-        freq="h",
-        cols=None,
-    ):
-        if size == None:
-            self.seq_len = 24 * 4 * 4
-            self.label_len = 24 * 4
-            self.pred_len = 24 * 4
+    def __init__(self, root_path, flag='train', size=None,
+                 features='S', data_path='ETTh1.csv',
+                 target='OT', scale=True, inverse=False, timeenc=0, freq='h', cols=None):
+        if size is None:
+            self.seq_len = 24*4*4
+            self.label_len = 24*4
+            self.pred_len = 24*4
         else:
-            self.seq_len = size[0]
-            self.label_len = size[1]
-            self.pred_len = size[2]
+            self.seq_len, self.label_len, self.pred_len = size
 
-        assert flag in ["train", "test", "val"]
-        type_map = {"train": 0, "val": 1, "test": 2}
+        assert flag in ['train', 'test', 'val']
+        type_map = {'train': 0, 'val': 1, 'test': 2}
         self.set_type = type_map[flag]
 
         self.features = features
@@ -436,37 +421,28 @@ class Dataset_ETT_hour(Dataset):
         self.scaler = StandardScaler()
         df_raw = pd.read_csv(os.path.join(self.root_path, self.data_path))
 
-        border1s = [
-            0,
-            12 * 30 * 24 - self.seq_len,
-            12 * 30 * 24 + 4 * 30 * 24 - self.seq_len,
-        ]
-        border2s = [12 * 30 * 24, 12 * 30 * 24 + 4 * 30 * 24, 12 * 30 * 24 + 8 * 30 * 24]
-        border1 = border1s[self.set_type]
-        border2 = border2s[self.set_type]
+        border1s = [0, 12*30*24 - self.seq_len, 12*30*24+4*30*24 - self.seq_len]
+        border2s = [12*30*24, 12*30*24+4*30*24, 12*30*24+8*30*24]
+        border1, border2 = border1s[self.set_type], border2s[self.set_type]
 
-        if self.features == "M" or self.features == "MS":
-            cols_data = df_raw.columns[1:]
-            df_data = df_raw[cols_data]
-        elif self.features == "S":
+        if self.features in ['M', 'MS']:
+            df_data = df_raw[df_raw.columns[1:]]
+        else:
             df_data = df_raw[[self.target]]
 
         if self.scale:
-            train_data = df_data[border1s[0] : border2s[0]]
+            train_data = df_data[border1s[0]:border2s[0]]
             self.scaler.fit(train_data.values)
             data = self.scaler.transform(df_data.values)
         else:
             data = df_data.values
 
-        df_stamp = df_raw[["date"]][border1:border2]
-        df_stamp["date"] = pd.to_datetime(df_stamp.date)
+        df_stamp = df_raw[['date']][border1:border2]
+        df_stamp['date'] = pd.to_datetime(df_stamp.date)
         data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
 
         self.data_x = data[border1:border2]
-        if self.inverse:
-            self.data_y = df_data.values[border1:border2]
-        else:
-            self.data_y = data[border1:border2]
+        self.data_y = df_data.values[border1:border2] if self.inverse else data[border1:border2]
         self.data_stamp = data_stamp
 
     def __getitem__(self, index):
@@ -476,16 +452,9 @@ class Dataset_ETT_hour(Dataset):
         r_end = r_begin + self.label_len + self.pred_len
 
         seq_x = self.data_x[s_begin:s_end]
-        if self.inverse:
-            seq_y = np.concatenate(
-                [
-                    self.data_x[r_begin : r_begin + self.label_len],
-                    self.data_y[r_begin + self.label_len : r_end],
-                ],
-                0,
-            )
-        else:
-            seq_y = self.data_y[r_begin:r_end]
+        seq_y = (np.concatenate([self.data_x[r_begin:r_begin+self.label_len],
+                                 self.data_y[r_begin+self.label_len:r_end]], 0)
+                 if self.inverse else self.data_y[r_begin:r_end])
         seq_x_mark = self.data_stamp[s_begin:s_end]
         seq_y_mark = self.data_stamp[r_begin:r_end]
 
@@ -499,31 +468,18 @@ class Dataset_ETT_hour(Dataset):
 
 
 class Dataset_ETT_minute(Dataset):
-    def __init__(
-        self,
-        root_path,
-        flag="train",
-        size=None,
-        features="S",
-        data_path="ETTm1.csv",
-        target="OT",
-        scale=True,
-        inverse=False,
-        timeenc=0,
-        freq="t",
-        cols=None,
-    ):
-        if size == None:
-            self.seq_len = 24 * 4 * 4
-            self.label_len = 24 * 4
-            self.pred_len = 24 * 4
+    def __init__(self, root_path, flag='train', size=None,
+                 features='S', data_path='ETTm1.csv',
+                 target='OT', scale=True, inverse=False, timeenc=0, freq='t', cols=None):
+        if size is None:
+            self.seq_len = 24*4*4
+            self.label_len = 24*4
+            self.pred_len = 24*4
         else:
-            self.seq_len = size[0]
-            self.label_len = size[1]
-            self.pred_len = size[2]
+            self.seq_len, self.label_len, self.pred_len = size
 
-        assert flag in ["train", "test", "val"]
-        type_map = {"train": 0, "val": 1, "test": 2}
+        assert flag in ['train', 'test', 'val']
+        type_map = {'train': 0, 'val': 1, 'test': 2}
         self.set_type = type_map[flag]
 
         self.features = features
@@ -541,41 +497,28 @@ class Dataset_ETT_minute(Dataset):
         self.scaler = StandardScaler()
         df_raw = pd.read_csv(os.path.join(self.root_path, self.data_path))
 
-        border1s = [
-            0,
-            12 * 30 * 24 * 4 - self.seq_len,
-            12 * 30 * 24 * 4 + 4 * 30 * 24 * 4 - self.seq_len,
-        ]
-        border2s = [
-            12 * 30 * 24 * 4,
-            12 * 30 * 24 * 4 + 4 * 30 * 24 * 4,
-            12 * 30 * 24 * 4 + 8 * 30 * 24 * 4,
-        ]
-        border1 = border1s[self.set_type]
-        border2 = border2s[self.set_type]
+        border1s = [0, 12*30*24*4 - self.seq_len, 12*30*24*4+4*30*24*4 - self.seq_len]
+        border2s = [12*30*24*4, 12*30*24*4+4*30*24*4, 12*30*24*4+8*30*24*4]
+        border1, border2 = border1s[self.set_type], border2s[self.set_type]
 
-        if self.features == "M" or self.features == "MS":
-            cols_data = df_raw.columns[1:]
-            df_data = df_raw[cols_data]
-        elif self.features == "S":
+        if self.features in ['M', 'MS']:
+            df_data = df_raw[df_raw.columns[1:]]
+        else:
             df_data = df_raw[[self.target]]
 
         if self.scale:
-            train_data = df_data[border1s[0] : border2s[0]]
+            train_data = df_data[border1s[0]:border2s[0]]
             self.scaler.fit(train_data.values)
             data = self.scaler.transform(df_data.values)
         else:
             data = df_data.values
 
-        df_stamp = df_raw[["date"]][border1:border2]
-        df_stamp["date"] = pd.to_datetime(df_stamp.date)
+        df_stamp = df_raw[['date']][border1:border2]
+        df_stamp['date'] = pd.to_datetime(df_stamp.date)
         data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
 
         self.data_x = data[border1:border2]
-        if self.inverse:
-            self.data_y = df_data.values[border1:border2]
-        else:
-            self.data_y = data[border1:border2]
+        self.data_y = df_data.values[border1:border2] if self.inverse else data[border1:border2]
         self.data_stamp = data_stamp
 
     def __getitem__(self, index):
@@ -585,16 +528,9 @@ class Dataset_ETT_minute(Dataset):
         r_end = r_begin + self.label_len + self.pred_len
 
         seq_x = self.data_x[s_begin:s_end]
-        if self.inverse:
-            seq_y = np.concatenate(
-                [
-                    self.data_x[r_begin : r_begin + self.label_len],
-                    self.data_y[r_begin + self.label_len : r_end],
-                ],
-                0,
-            )
-        else:
-            seq_y = self.data_y[r_begin:r_end]
+        seq_y = (np.concatenate([self.data_x[r_begin:r_begin+self.label_len],
+                                 self.data_y[r_begin+self.label_len:r_end]], 0)
+                 if self.inverse else self.data_y[r_begin:r_end])
         seq_x_mark = self.data_stamp[s_begin:s_end]
         seq_y_mark = self.data_stamp[r_begin:r_end]
 
@@ -608,35 +544,27 @@ class Dataset_ETT_minute(Dataset):
 
 
 # === AGRICULTURE-SPECIFIC CUSTOM DATASET ===
-# This replaces the generic Dataset_Custom from GR-KAN Informer
-# and is tailored for rice yield prediction with 8 features × 12 timesteps.
 class Dataset_Custom(Dataset):
-    def __init__(
-        self,
-        root_path,
-        data_path,
-        flag="train",
-        size=None,
-        features="M",
-        target="target",
-        inverse=False,
-        timeenc=0,
-        freq="h",
-        cols=None,
-        scale=True,
-        train_scaler=None,
-    ):
-        if size == None:
+    def __init__(self, root_path, data_path,
+                 flag='train',
+                 size=None,
+                 features='M',
+                 target='Ground_Truth',
+                 inverse=False,
+                 timeenc=0,
+                 freq='h',
+                 cols=None,
+                 scale=True,
+                 train_scaler=None):
+        if size is None:
             self.seq_len = 12
             self.label_len = 0
             self.pred_len = 1
         else:
-            self.seq_len = size[0]
-            self.label_len = size[1]
-            self.pred_len = size[2]
+            self.seq_len, self.label_len, self.pred_len = size
 
-        assert flag in ["train", "test", "val", "pred"]
-        type_map = {"train": 0, "val": 1, "test": 2, "pred": 3}
+        assert flag in ['train', 'test', 'val', 'pred']
+        type_map = {'train': 0, 'val': 1, 'test': 2, 'pred': 3}
         self.set_type = type_map[flag]
 
         self.features = features
@@ -653,17 +581,9 @@ class Dataset_Custom(Dataset):
         self.train_scaler = train_scaler
 
     def __read_data__(self):
-        import os
-        import pandas as pd
-        from utils.tools import StandardScaler
-
-        # 1. Load the data
         df_raw = pd.read_csv(os.path.join(self.root_path, self.data_path))
-
-        # 2. Extract year from the 'District' column
         df_raw['Year'] = df_raw['District'].str.split().str[-1].astype(int)
 
-        # 3. Filter DataFrame based on year and flag
         if self.flag == 'train':
             df_raw = df_raw[(df_raw['Year'] >= 2001) & (df_raw['Year'] <= 2005)]
         elif self.flag == 'val':
@@ -671,10 +591,8 @@ class Dataset_Custom(Dataset):
         elif self.flag == 'test':
             df_raw = df_raw[df_raw['Year'] == 2006]
 
-        # 4. Store the filtered DataFrame
         self.df_raw = df_raw.reset_index(drop=True)
 
-        # 5. Select only the 8 features + target
         if self.cols is not None:
             cols_to_use = self.cols + [self.target]
         else:
@@ -685,15 +603,12 @@ class Dataset_Custom(Dataset):
             ]
         df_raw = df_raw[cols_to_use]
 
-        # 6. Prepare features (X) and target (y)
         feature_cols = df_raw.columns[:-1]
         df_data = df_raw[feature_cols]
         target_data = df_raw[self.target]
 
-        # Ensure numeric
         df_data = df_data.apply(pd.to_numeric, errors='coerce').fillna(0)
 
-        # 7. Scaling
         self.scaler = StandardScaler()
         if self.scale:
             if self.flag == 'train':
@@ -708,7 +623,6 @@ class Dataset_Custom(Dataset):
         else:
             data_x = df_data.values
 
-        # 8. Store
         self.data_x = data_x
         self.data_y = target_data.values
 
@@ -716,32 +630,27 @@ class Dataset_Custom(Dataset):
         s_begin = index
         s_end = s_begin + self.seq_len
 
-        seq_x = self.data_x[s_begin:s_end]
-        seq_y = self.data_y[s_end - 1]
+        seq_x = self.data_x[s_begin:s_end]  # [12, 8]
+        seq_y = self.data_y[s_end - 1]      # scalar yield
 
-        print(f"DEBUG: index={index}, seq_x.shape={seq_x.shape}, seq_y={seq_y}")
-
-        district_year_str = self.df_raw.iloc[s_begin]["District"]
+        # Build time features
+        district_year_str = self.df_raw.iloc[s_begin]['District']
         year = int(district_year_str.split()[-1])
-        if year % 4 == 0:
-            start_date = f"{year}-05-24"
-        else:
-            start_date = f"{year}-05-25"
+        start_date = f"{year}-05-24" if year % 4 == 0 else f"{year}-05-25"
 
-        dates = pd.date_range(start=start_date, periods=self.seq_len, freq="16D")
-        df_dates = pd.DataFrame({"date": dates})
-        seq_x_mark = time_features(df_dates, timeenc=1, freq="h")
+        dates = pd.date_range(start=start_date, periods=self.seq_len, freq='16D')
+        df_dates = pd.DataFrame({'date': dates})
+        seq_x_mark = time_features(df_dates, timeenc=1, freq='h')
         seq_x_mark = torch.tensor(seq_x_mark).float()
 
-        dec_dates = pd.date_range(
-            start=dates[-(self.label_len)], periods=self.label_len + self.pred_len, freq="16D"
-        )
-        df_dec_dates = pd.DataFrame({"date": dec_dates})
-        seq_y_mark = time_features(df_dec_dates, timeenc=1, freq="h")
+        dec_dates = pd.date_range(start=dates[-(self.label_len)],
+                                  periods=self.label_len + self.pred_len, freq='16D')
+        df_dec_dates = pd.DataFrame({'date': dec_dates})
+        seq_y_mark = time_features(df_dec_dates, timeenc=1, freq='h')
         seq_y_mark = torch.tensor(seq_y_mark).float()
 
         seq_x = torch.tensor(seq_x).float()
-        seq_y = torch.tensor([seq_y]).float().unsqueeze(0)
+        seq_y = torch.tensor([seq_y]).float().unsqueeze(0)  # [1,1]
 
         return seq_x, seq_y, seq_x_mark, seq_y_mark
 
@@ -752,34 +661,21 @@ class Dataset_Custom(Dataset):
         if self.train_scaler is not None:
             return self.train_scaler.inverse_transform(data)
         else:
-            raise Exception("Scaler has not been fitted on training data.")
+            raise Exception("Scaler not fitted on training data.")
 
 
 class Dataset_Pred(Dataset):
-    def __init__(
-        self,
-        root_path,
-        flag="pred",
-        size=None,
-        features="S",
-        data_path="ETTh1.csv",
-        target="OT",
-        scale=True,
-        inverse=False,
-        timeenc=0,
-        freq="15min",
-        cols=None,
-    ):
-        if size == None:
-            self.seq_len = 24 * 4 * 4
-            self.label_len = 24 * 4
-            self.pred_len = 24 * 4
+    def __init__(self, root_path, flag='pred', size=None,
+                 features='S', data_path='ETTh1.csv',
+                 target='OT', scale=True, inverse=False, timeenc=0, freq='15min', cols=None):
+        if size is None:
+            self.seq_len = 24*4*4
+            self.label_len = 24*4
+            self.pred_len = 24*4
         else:
-            self.seq_len = size[0]
-            self.label_len = size[1]
-            self.pred_len = size[2]
+            self.seq_len, self.label_len, self.pred_len = size
 
-        assert flag in ["pred"]
+        assert flag in ['pred']
 
         self.features = features
         self.target = target
@@ -802,16 +698,15 @@ class Dataset_Pred(Dataset):
         else:
             cols = list(df_raw.columns)
             cols.remove(self.target)
-            cols.remove("date")
-        df_raw = df_raw[["date"] + cols + [self.target]]
+            cols.remove('date')
+        df_raw = df_raw[['date'] + cols + [self.target]]
 
         border1 = len(df_raw) - self.seq_len
         border2 = len(df_raw)
 
-        if self.features == "M" or self.features == "MS":
-            cols_data = df_raw.columns[1:]
-            df_data = df_raw[cols_data]
-        elif self.features == "S":
+        if self.features in ['M', 'MS']:
+            df_data = df_raw[df_raw.columns[1:]]
+        else:
             df_data = df_raw[[self.target]]
 
         if self.scale:
@@ -820,21 +715,17 @@ class Dataset_Pred(Dataset):
         else:
             data = df_data.values
 
-        tmp_stamp = df_raw[["date"]][border1:border2]
-        tmp_stamp["date"] = pd.to_datetime(tmp_stamp.date)
-        pred_dates = pd.date_range(
-            tmp_stamp.date.values[-1], periods=self.pred_len + 1, freq=self.freq
-        )
+        tmp_stamp = df_raw[['date']][border1:border2]
+        tmp_stamp['date'] = pd.to_datetime(tmp_stamp.date)
+        pred_dates = pd.date_range(tmp_stamp.date.values[-1],
+                                   periods=self.pred_len+1, freq=self.freq)
 
-        df_stamp = pd.DataFrame(columns=["date"])
+        df_stamp = pd.DataFrame(columns=['date'])
         df_stamp.date = list(tmp_stamp.date.values) + list(pred_dates[1:])
         data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq[-1:])
 
         self.data_x = data[border1:border2]
-        if self.inverse:
-            self.data_y = df_data.values[border1:border2]
-        else:
-            self.data_y = data[border1:border2]
+        self.data_y = df_data.values[border1:border2] if self.inverse else data[border1:border2]
         self.data_stamp = data_stamp
 
     def __getitem__(self, index):
@@ -844,10 +735,8 @@ class Dataset_Pred(Dataset):
         r_end = r_begin + self.label_len + self.pred_len
 
         seq_x = self.data_x[s_begin:s_end]
-        if self.inverse:
-            seq_y = self.data_x[r_begin : r_begin + self.label_len]
-        else:
-            seq_y = self.data_y[r_begin : r_begin + self.label_len]
+        seq_y = (self.data_x[r_begin:r_begin+self.label_len]
+                 if self.inverse else self.data_y[r_begin:r_begin+self.label_len])
         seq_x_mark = self.data_stamp[s_begin:s_end]
         seq_y_mark = self.data_stamp[r_begin:r_end]
 
