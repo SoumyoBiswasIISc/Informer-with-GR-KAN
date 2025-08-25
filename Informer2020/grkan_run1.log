@@ -1,0 +1,17 @@
+Args in experiment:
+Namespace(activation='gelu', attn='full', batch_size=32, c_out=1, checkpoints='./checkpoints/', cols=['NDVI', 'EVI', 'NIR-V', 'CSIF', 'Rainfall', 'Tmax', 'Tmin', 'Solr_mean'], d_ff=2048, d_layers=1, d_model=512, data='custom', data_path='integrated_dataset.csv', dec_in=8, des='rice_yield_grkan', detail_freq='h', devices='0,1,2,3', distil=True, do_predict=False, dropout=0.05, e_layers=2, embed='timeF', enc_in=8, factor=5, features='MS', freq='h', gpu=0, inverse=False, itr=1, label_len=6, learning_rate=0.0001, loss='mse', lradj='type1', mix=True, model='informer', n_heads=8, num_workers=0, output_attention=False, padding=0, patience=5, pred_len=1, pretrain_path='/user1/res/cvpr/soumyo.b_r/Informer2020/checkpoints/informer_custom_ftMS_sl12_ll6_pl1_dm512_nh8_el2_dl1_df1024_atprob_fc5_ebtimeF_dtTrue_mxTrue_rice_yield_kharif_0/checkpoint.pth', root_path='./data/', s_layers=[3, 2, 1], seq_len=12, target='Ground_Truth', train_epochs=20, use_amp=False, use_gpu=True, use_multi_gpu=False)
+Use GPU: cuda:0
+Loading pretrained weights from /user1/res/cvpr/soumyo.b_r/Informer2020/checkpoints/informer_custom_ftMS_sl12_ll6_pl1_dm512_nh8_el2_dl1_df1024_atprob_fc5_ebtimeF_dtTrue_mxTrue_rice_yield_kharif_0/checkpoint.pth
+Traceback (most recent call last):
+  File "main_informer.py", line 224, in <module>
+    exp = Exp(args)
+  File "/user1/res/cvpr/soumyo.b_r/repo_backup/cleaned_code/Informer2020/exp/exp_informer.py", line 312, in __init__
+    super(Exp_Informer, self).__init__(args)
+  File "/user1/res/cvpr/soumyo.b_r/repo_backup/cleaned_code/Informer2020/exp/exp_basic.py", line 9, in __init__
+    self.model = self._build_model().to(self.device)
+  File "/user1/res/cvpr/soumyo.b_r/repo_backup/cleaned_code/Informer2020/exp/exp_informer.py", line 361, in _build_model
+    model.load_state_dict(state_dict, strict=False)
+  File "/user1/res/cvpr/soumyo.b_r/miniconda3/envs/InformerEnv2/lib/python3.6/site-packages/torch/nn/modules/module.py", line 1224, in load_state_dict
+    self.__class__.__name__, "\n\t".join(error_msgs)))
+RuntimeError: Error(s) in loading state_dict for Informer:
+	size mismatch for dec_embedding.value_embedding.tokenConv.weight: copying a param with shape torch.Size([512, 1, 3]) from checkpoint, the shape in current model is torch.Size([512, 8, 3]).
